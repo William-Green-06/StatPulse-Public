@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
-from dapp.model.predictor import predict_matchup
-from dapp.data.database import get_upcoming_matchups_from_db, get_fighter_by_id, get_name_by_id
+from app.model.predictor import predict_matchup
+from app.data.database import get_upcoming_matchups_from_db, get_fighter_by_id, get_name_by_id
 
 upcoming_api = Blueprint('upcoming_api', __name__)
 

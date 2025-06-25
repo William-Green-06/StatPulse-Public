@@ -11,7 +11,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from psycopg2.extras import execute_values
 import curl_cffi
-from dapp.data.database import get_db_connection
+from app.data.database import get_db_connection
 
 class Fighter:
     def __init__(self, name='', pfp_rank=0, div_rank=0, height=0, age=0, reach=0, wins=0, losses=0, total_fights=0, ranked_wins=0, ranked_losses=0, pfp_wins=0, pfp_losses=0, champ_wins=0, champ_losses=0, pfp_champ_wins=0, pfp_champ_losses=0, title_def=0, title_loss=0, ko_wins=0, ko_losses=0, sub_wins=0, sub_losses = 0, total_fight_time=0, strikes_absorbed=0, total_opp_strikes=0, subs_attempted=0, total_head_strikes=0, total_body_strikes=0, total_leg_strikes=0, 

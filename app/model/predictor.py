@@ -1,5 +1,5 @@
-from dapp.model.loader import get_model
-from dapp.model.loader import get_scaler
+from app.model.loader import get_model
+from app.model.loader import get_scaler
 import numpy as np
 
 # load model and scaler
