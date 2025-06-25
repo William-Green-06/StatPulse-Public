@@ -1,7 +1,7 @@
 from flask import Flask
-from app.routes.api.upcoming import upcoming_api
-from app.routes.api.predict import predict_api
-from app.routes.home import home_bp
+from dapp.routes.api.upcoming import upcoming_api
+from dapp.routes.api.predict import predict_api
+from dapp.routes.home import home_bp
 import os
 
 def create_app():

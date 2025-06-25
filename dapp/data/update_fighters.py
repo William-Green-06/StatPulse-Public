@@ -11,7 +11,7 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from psycopg2.extras import execute_values
 import curl_cffi
-from app.data.database import get_db_connection
+from dapp.data.database import get_db_connection
 
 class Fighter:
     def __init__(self, name='', pfp_rank=0, div_rank=0, height=0, age=0, reach=0, wins=0, losses=0, total_fights=0, ranked_wins=0, ranked_losses=0, pfp_wins=0, pfp_losses=0, champ_wins=0, champ_losses=0, pfp_champ_wins=0, pfp_champ_losses=0, title_def=0, title_loss=0, ko_wins=0, ko_losses=0, sub_wins=0, sub_losses = 0, total_fight_time=0, strikes_absorbed=0, total_opp_strikes=0, subs_attempted=0, total_head_strikes=0, total_body_strikes=0, total_leg_strikes=0, 
@@ -1065,18 +1065,88 @@ def update_odds():
 if __name__ == "__main__":
     conn = get_db_connection()
     cur = conn.cursor()
-    
+
     create_table_query = """
     CREATE TABLE IF NOT EXISTS fighters (
         id SERIAL PRIMARY KEY,
-        name VARCHAR(255) UNIQUE NOT NULL,
-        weight_class VARCHAR(50),
-        wins INT,
-        losses INT
-        -- add your fields
+        name TEXT UNIQUE NOT NULL,
+        p4p_rank INTEGER,
+        div_rank INTEGER,
+        age INTEGER,
+        height INTEGER,
+        reach INTEGER,
+        wins INTEGER,
+        losses INTEGER,
+        total_fights INTEGER,
+        ranked_wins INTEGER,
+        ranked_losses INTEGER,
+        p4p_wins INTEGER,
+        p4p_losses INTEGER,
+        champion_wins INTEGER,
+        champion_losses INTEGER,
+        p4p_champion_wins INTEGER,
+        p4p_champion_losses INTEGER,
+        title_defenses INTEGER,
+        title_losses INTEGER,
+        win_rate DOUBLE PRECISION,
+        ko_wins INTEGER,
+        ko_losses INTEGER,
+        ko_risk DOUBLE PRECISION,
+        sub_wins INTEGER,
+        sub_losses INTEGER,
+        sub_risk DOUBLE PRECISION,
+        finish_rate DOUBLE PRECISION,
+        win_streak INTEGER,
+        loss_streak INTEGER,
+        last_five_fight_wins INTEGER,
+        last_five_fight_losses INTEGER,
+        last_five_fight_win_rate DOUBLE PRECISION,
+        total_fight_time DOUBLE PRECISION,
+        avg_fight_time DOUBLE PRECISION,
+        SLpM DOUBLE PRECISION,
+        SApM DOUBLE PRECISION,
+        StrDef DOUBLE PRECISION,
+        TDAvg DOUBLE PRECISION,
+        TDAcc DOUBLE PRECISION,
+        TDDef DOUBLE PRECISION,
+        SubAvg DOUBLE PRECISION,
+        total_head_strikes INTEGER,
+        total_body_strikes INTEGER,
+        total_leg_strikes INTEGER,
+        total_strikes_landed INTEGER,
+        total_strikes_missed INTEGER,
+        StrAcc DOUBLE PRECISION,
+        head_strikes_accuracy DOUBLE PRECISION,
+        body_strikes_accuracy DOUBLE PRECISION,
+        leg_strikes_accuracy DOUBLE PRECISION,
+        rel_ko_rate DOUBLE PRECISION,
+        abs_ko_rate DOUBLE PRECISION,
+        rel_sub_rate DOUBLE PRECISION,
+        abs_sub_rate DOUBLE PRECISION,
+        SubAcc DOUBLE PRECISION,
+        knockdowns INTEGER,
+        knockdown_risk DOUBLE PRECISION,
+        knockdown_durability DOUBLE PRECISION,
+        win_finish_metric DOUBLE PRECISION,
+        aggression_metric DOUBLE PRECISION,
+        odds DOUBLE PRECISION,
+        grappling_vs_striking DOUBLE PRECISION,
+        AggDef_Delta DOUBLE PRECISION
     );
+
+    CREATE TABLE IF NOT EXISTS matchups (
+        id SERIAL PRIMARY KEY,
+        fighter_a_id INTEGER,
+        fighter_b_id INTEGER
+    );
+
+    ALTER TABLE matchups
+    ADD CONSTRAINT matchup_id_order CHECK (fighter_a_id < fighter_b_id);
+
+    ALTER TABLE matchups
+    ADD CONSTRAINT unique_matchup_pair UNIQUE (fighter_a_id, fighter_b_id);
     """
-    
+
     cur.execute(create_table_query)
     conn.commit()
     cur.close()
