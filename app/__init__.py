@@ -1,5 +1,4 @@
 from flask import Flask
-from app.routes.predict import predict_bp
 from app.routes.api.upcoming import upcoming_api
 from app.routes.api.predict import predict_api
 from app.routes.home import home_bp
