@@ -46,3 +46,5 @@ app/static/css/output.css
 # Ignore JS files only in build or dist folders
 build/*.js
 dist/*.js
+
+ufc_connection.session.sql

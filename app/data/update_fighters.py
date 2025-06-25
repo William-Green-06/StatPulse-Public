@@ -1063,6 +1063,25 @@ def update_odds():
     conn.close()
     
 if __name__ == "__main__":
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    create_table_query = """
+    CREATE TABLE IF NOT EXISTS fighters (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(255) UNIQUE NOT NULL,
+        weight_class VARCHAR(50),
+        wins INT,
+        losses INT
+        -- add your fields
+    );
+    """
+    
+    cur.execute(create_table_query)
+    conn.commit()
+    cur.close()
+    conn.close()
+    
     update_fighter_data()
     update_matchups(clean=True)
     update_odds()
