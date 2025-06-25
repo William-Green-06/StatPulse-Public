@@ -1063,6 +1063,6 @@ def update_odds():
     conn.close()
     
 if __name__ == "__main__":
-    #update_fighter_data()
+    update_fighter_data()
     update_matchups(clean=True)
     update_odds()
