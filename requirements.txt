@@ -10,3 +10,4 @@ python-dotenv==1.1.1
 python_dateutil==2.9.0.post0
 Requests==2.32.4
 gunicorn
+scikit-learn
