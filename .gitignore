@@ -30,6 +30,9 @@ env/
 
 # Node dependencies
 node_modules/
+tailwind_src/
+package.json
+package-lock.json
 
 # Tailwind build output (optional if you rebuild on deploy)
 app/static/css/output.css
