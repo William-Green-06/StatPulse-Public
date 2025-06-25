@@ -40,5 +40,6 @@ app/static/css/output.css
 # Ignore environment variables if you keep them in a file (optional)
 .env
 
-# Ignore compiled JS files (if you build them locally and don't commit)
-*.js
+# Ignore JS files only in build or dist folders
+build/*.js
+dist/*.js
