@@ -999,7 +999,6 @@ def update_matchups(clean=False):
     for i in range(0, len(fighter_links), 2):
         fighter_1 = fighter_links[i]
         fighter_2 = fighter_links[i + 1]
-        fighters = [fighter_1, fighter_2]
         #names = []
         #for fighter in fighters:
             #name = getFighterName(fighter)
@@ -1079,12 +1078,31 @@ def reset_fighter_data():
     cur.close()
     conn.close()
 
+def get_matchups_content():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    get_matchups_query = """
+    SELECT * FROM matchups;
+    """
+
+    cur.execute(get_matchups_query)
+    results = cur.fetchall()
+    cur.close()
+    conn.close()
+    return results
+
+
 if __name__ == "__main__":
     conn = get_db_connection()
     cur = conn.cursor()
     
     if '--fresh' in sys.argv:
         reset_fighter_data()
+
+    if '--debug' in sys.argv:
+        matchups = get_matchups_content()
+        print(matchups)
 
     create_table_query = """
     CREATE TABLE IF NOT EXISTS fighters (

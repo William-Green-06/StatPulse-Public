@@ -27,8 +27,10 @@ def predict_matchup(fighter_a_data, fighter_b_data):
     # first, let's clean the info and get rid of metadata
     fighter_a_data.pop("id", None)
     fighter_a_data.pop("name", None)
+    fighter_a_data.pop("link", None)
     fighter_b_data.pop("id", None)
     fighter_b_data.pop("name", None)
+    fighter_b_data.pop("link", None)
 
     no_odds = False
     # Next, lets check if odds are specified, and set them to 100 if they aren't
