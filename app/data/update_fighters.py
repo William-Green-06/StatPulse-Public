@@ -12,12 +12,14 @@ from bs4 import BeautifulSoup
 from psycopg2.extras import execute_values
 import curl_cffi
 from app.data.database import get_db_connection
+import sys
 
 class Fighter:
-    def __init__(self, name='', pfp_rank=0, div_rank=0, height=0, age=0, reach=0, wins=0, losses=0, total_fights=0, ranked_wins=0, ranked_losses=0, pfp_wins=0, pfp_losses=0, champ_wins=0, champ_losses=0, pfp_champ_wins=0, pfp_champ_losses=0, title_def=0, title_loss=0, ko_wins=0, ko_losses=0, sub_wins=0, sub_losses = 0, total_fight_time=0, strikes_absorbed=0, total_opp_strikes=0, subs_attempted=0, total_head_strikes=0, total_body_strikes=0, total_leg_strikes=0, 
+    def __init__(self, name='', link='', pfp_rank=0, div_rank=0, height=0, age=0, reach=0, wins=0, losses=0, total_fights=0, ranked_wins=0, ranked_losses=0, pfp_wins=0, pfp_losses=0, champ_wins=0, champ_losses=0, pfp_champ_wins=0, pfp_champ_losses=0, title_def=0, title_loss=0, ko_wins=0, ko_losses=0, sub_wins=0, sub_losses = 0, total_fight_time=0, strikes_absorbed=0, total_opp_strikes=0, subs_attempted=0, total_head_strikes=0, total_body_strikes=0, total_leg_strikes=0, 
                  total_head_strikes_missed=0, total_body_strikes_missed=0, total_leg_strikes_missed=0, 
                  total_strikes_landed=0, total_strikes_missed=0, takedowns_landed=0, takedowns_attempted=0, opp_takedowns_landed=0, opp_takedowns_attempted=0, win_streak=0, loss_streak=0, last_5_fight_wins=0, last_five_fight_losses=0, knockdowns=0, opp_knockdowns=0):
         self.name = name
+        self.link = link
         self.pfp_rank = pfp_rank
         self.div_rank = div_rank
         self.height = height
@@ -279,6 +281,7 @@ class Fighter:
     def to_dict(self):
         return {
                 'name': self.name,
+                'link': self.link,
                 'p4p_rank': self.pfp_rank if self.pfp_rank != 'NR' else 20,
                 'div_rank': self.div_rank if self.div_rank != 'NR' else 20,
                 'age': self.age,
@@ -926,6 +929,7 @@ def update_fighter_data():
             for link in fighter_links[resume_index:]: # just get the first ten for debugging
                 print(f"({resume_index + 1}/{len(fighter_links)}) Getting stats for {link}")
                 fighter = get_fighter_stats_from_link(link)
+                fighter.link = link
                 # Set ranks
                 #fighter.div_rank = getRank(fighter.name, getWeightclass(link), date.isoformat())
                 if fighter.div_rank == 'NR':
@@ -952,8 +956,8 @@ def update_fighter_data():
                         insert_query = f"""
                             INSERT INTO fighters ({', '.join(columns)})
                             VALUES %s
-                            ON CONFLICT (name) DO UPDATE
-                            SET {', '.join([f"{col} = EXCLUDED.{col}" for col in columns if col != 'name'])};
+                            ON CONFLICT (link) DO UPDATE
+                            SET {', '.join([f"{col} = EXCLUDED.{col}" for col in columns if col != 'link'])};
                         """
 
                         execute_values(cur, insert_query, values)
@@ -996,17 +1000,17 @@ def update_matchups(clean=False):
         fighter_1 = fighter_links[i]
         fighter_2 = fighter_links[i + 1]
         fighters = [fighter_1, fighter_2]
-        names = []
-        for fighter in fighters:
-            name = getFighterName(fighter)
-            names.append(name)
+        #names = []
+        #for fighter in fighters:
+            #name = getFighterName(fighter)
+            #names.append(name)
 
         with conn:
             with conn.cursor() as cur:
                 # Step 1: Get fighter IDs for the two names
                 cur.execute(
-                    "SELECT id FROM fighters WHERE name = %s OR name = %s;",
-                    (names[0], names[1])
+                    "SELECT id FROM fighters WHERE link = %s OR link = %s;",
+                    (fighter_1, fighter_2)#(names[0], names[1])
                 )
                 results = cur.fetchall()
 
@@ -1016,12 +1020,12 @@ def update_matchups(clean=False):
 
                 # Step 2: Map names to IDs correctly (in case order was switched in the query result)
                 cur.execute(
-                    "SELECT id, name FROM fighters WHERE name = %s OR name = %s;",
-                    (names[0], names[1])
+                    "SELECT id, link FROM fighters WHERE link = %s OR link = %s;",
+                    (fighter_1, fighter_2)
                 )
-                id_map = {name: fid for fid, name in cur.fetchall()}
-                fighter_a_id = id_map[names[0]]
-                fighter_b_id = id_map[names[1]]
+                id_map = {link: fid for fid, link in cur.fetchall()}
+                fighter_a_id = id_map[fighter_1]
+                fighter_b_id = id_map[fighter_2]
                 fighter_a_id, fighter_b_id = sorted([fighter_a_id, fighter_b_id])
 
                 # Step 3: Insert into matchups table
@@ -1061,15 +1065,32 @@ def update_odds():
                     cur.execute("UPDATE fighters SET odds = %s WHERE id = %s;", (odds[0], fighter_a_id))
                     cur.execute("UPDATE fighters SET odds = %s WHERE id = %s;", (odds[1], fighter_b_id))
     conn.close()
-    
+
+def reset_fighter_data():
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    delete_table_query = """
+    DROP TABLE IF EXISTS fighters;
+    """
+
+    cur.execute(delete_table_query)
+    conn.commit()
+    cur.close()
+    conn.close()
+
 if __name__ == "__main__":
     conn = get_db_connection()
     cur = conn.cursor()
+    
+    if '--fresh' in sys.argv:
+        reset_fighter_data()
 
     create_table_query = """
     CREATE TABLE IF NOT EXISTS fighters (
         id SERIAL PRIMARY KEY,
-        name TEXT UNIQUE NOT NULL,
+        name TEXT NOT NULL,
+        link TEXT UNIQUE,
         p4p_rank INTEGER,
         div_rank INTEGER,
         age INTEGER,
@@ -1140,6 +1161,9 @@ if __name__ == "__main__":
         fighter_b_id INTEGER
     );
 
+    ALTER TABLE matchups DROP CONSTRAINT IF EXISTS matchup_id_order;
+    ALTER TABLE matchups DROP CONSTRAINT IF EXISTS unique_matchup_pair;
+
     ALTER TABLE matchups
     ADD CONSTRAINT matchup_id_order CHECK (fighter_a_id < fighter_b_id);
 
@@ -1152,6 +1176,6 @@ if __name__ == "__main__":
     cur.close()
     conn.close()
     
-    update_fighter_data()
+    #update_fighter_data()
     update_matchups(clean=True)
     update_odds()
