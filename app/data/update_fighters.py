@@ -986,7 +986,9 @@ def update_matchups(clean=False):
                     CREATE TABLE matchups (
                         id SERIAL PRIMARY KEY,
                         fighter_a_id INTEGER,
-                        fighter_b_id INTEGER
+                        fighter_b_id INTEGER,
+                        fighter_a_prediction REAL,
+                        fighter_b_prediction REAL
                     );
 
                     ALTER TABLE matchups
@@ -1176,7 +1178,9 @@ if __name__ == "__main__":
     CREATE TABLE IF NOT EXISTS matchups (
         id SERIAL PRIMARY KEY,
         fighter_a_id INTEGER,
-        fighter_b_id INTEGER
+        fighter_b_id INTEGER,
+        fighter_a_prediction REAL,
+        fighter_b_prediction REAL,
     );
 
     ALTER TABLE matchups DROP CONSTRAINT IF EXISTS matchup_id_order;

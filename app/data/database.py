@@ -63,3 +63,45 @@ def get_name_by_id(fighter_id):
             name = cur.fetchone()
     conn.close()
     return name
+
+def get_matchup_prediction(fighter_a_id, fighter_b_id):
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT fighter_a_id, fighter_b_id, fighter_a_prediction, fighter_b_prediction
+                FROM matchups
+                WHERE (fighter_a_id = %s AND fighter_b_id = %s)
+                   OR (fighter_a_id = %s AND fighter_b_id = %s)
+                LIMIT 1;
+            """, (fighter_a_id, fighter_b_id, fighter_b_id, fighter_a_id))
+            
+            row = cur.fetchone()
+            if not row:
+                return None  # or raise an error, depending on your design
+
+            fighter_a_id, fighter_b_id, fighter_a_pred, fighter_b_pred = row
+
+            # Match the order given in arguments
+            if (fighter_a_id == fighter_a_id and fighter_b_id == fighter_b_id):
+                return fighter_a_pred, fighter_b_pred
+            elif (fighter_a_id == fighter_b_id and fighter_b_id == fighter_a_id):
+                return fighter_b_pred, fighter_a_pred
+            else:
+                # This shouldn't happen, but safe fallback
+                return None
+    conn.close()
+
+def set_matchup_prediction(fighter_a_id, fighter_b_id, pred_a, pred_b):
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cur:
+            # Try to update the matchup where the fighters are in either order
+            cur.execute("""
+                UPDATE matchups
+                SET fighter_a_prediction = %s,
+                    fighter_b_prediction = %s
+                WHERE (fighter_a_id = %s AND fighter_b_id = %s)
+                   OR (fighter_a_id = %s AND fighter_b_id = %s);
+            """, (pred_a, pred_b, fighter_a_id, fighter_b_id, fighter_b_id, fighter_a_id))
+    conn.close()
