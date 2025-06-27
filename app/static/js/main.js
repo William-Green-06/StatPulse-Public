@@ -3,11 +3,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 	const list = document.getElementById('fight-list');
 	list.innerHTML = '<li>Loading upcoming fights...</li>' // Create loading message on page load
+  const fightData = [];
 	fetch('/api/upcoming')
 		.then(response => response.json())
 		.then(data => {
 			list.innerHTML = ''; // Clear the loading message
+      fightData.push(...data)
 			data.forEach(fight => {
+
 				const li = document.createElement('li');
 				li.className = "flex items-center gap-2 text-lg px-4 py-2 max-w-full overflow-x-auto font-sans font-bold";
 
@@ -118,6 +121,20 @@ document.addEventListener('DOMContentLoaded', () => {
 								})
 								.then(res => res.json())
 								.then(updatedFight => {
+                  // Update fightData
+                  //console.log("fightData:", fightData);
+                  //console.log("updatedFight:", updatedFight);
+
+                  const index = fightData.findIndex(f =>
+                    (f.fighter_a_name === updatedFight.fighter_a_name && f.fighter_b_name == updatedFight.fighter_b_name) ||
+                    (f.fighter_a_name === updatedFight.fighter_b_name && f.fighter_b_name == updatedFight.fighter_a_name)
+                  );
+
+                  if (index !== -1) {
+                    fightData[index] = updatedFight;
+                    console.log("Updated fight.")
+                  }
+
 									// Update the line with new prediction & odds
 									predictionText.textContent = `Prediction: ${(updatedFight.prediction_a * 100).toFixed(2)}% - ${(updatedFight.prediction_b * 100).toFixed(2)}% -- Odds to look for: ${updatedFight.good_odds} ${updatedFight.winner_last_name}`;
 									// Remove old color classes if needed
@@ -136,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
 									inputB.remove();
 									submitBtn.remove();
 									if (warningIcon) warningIcon.remove();
+                  //fightSelect.dispatchEvent(new Event('change'));
 								})
 								.catch(err => {
 									predictionText.textContent = 'Failed to update odds. Try again.';
@@ -147,8 +165,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 			});
+      addBetCard(); // Create initial bet card
 		})
 		.catch(err => console.error('Failed to load upcoming fights:', err));
+
 
 	// Handle betting sidebar logic
   const sidebarToggleBtn = document.getElementById('toggle-sidebar');
@@ -159,17 +179,17 @@ document.addEventListener('DOMContentLoaded', () => {
     sidebarWrapper.classList.toggle('translate-x-full');
   });
 
-  const fightData = []; // Will store fetched fights
+  //const fightData = []; // Will store fetched fights
   const cardsContainer = document.getElementById('bet-cards');
   const addBetButton = document.getElementById('add-bet-card');
 
   // Fetch fight data once and reuse it
-  fetch('/api/upcoming')
-    .then(res => res.json())
-    .then(fights => {
-      fightData.push(...fights); // Store for reuse
-      addBetCard(); // Add the first card by default
-    });
+  // fetch('/api/upcoming')
+  //   .then(res => res.json())
+  //   .then(fights => {
+  //     fightData.push(...fights); // Store for reuse
+  //     addBetCard(); // Add the first card by default
+  //   });
 
   addBetButton.addEventListener('click', addBetCard);
 
@@ -380,7 +400,6 @@ document.addEventListener('DOMContentLoaded', () => {
       rankingContainer.appendChild(line);
     });
   }
-
 
   const evToggleBtn = document.getElementById('toggle-ranking');
   const evRanking = document.getElementById('ev-ranking');
