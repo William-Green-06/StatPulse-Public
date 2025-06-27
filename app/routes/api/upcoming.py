@@ -22,14 +22,13 @@ def upcoming():
         fighter_b_data = get_fighter_by_id(matchup[1])
 
         preds = get_matchup_prediction(matchup[0], matchup[1])
-        if preds != None:
-            if preds[0] != None and preds[1] != None:
+        if preds != None and (preds[0] != None and preds[1] != None):
                 no_odds = (fighter_a_data['odds'] == None or fighter_b_data['odds'] == None)
                 winner_prob = preds[0] if preds[0] > preds[1] else preds[1]
                 winner_name = fighter_a_name if preds[0] > preds[1] else fighter_b_name
                 winner_last_name = winner_name.split(' ')[1 if len(winner_name.split(' ')) > 1 else 0]
                 good_odds = implied_moneyline(winner_prob)
-    
+
                 response.append({
                     'fighter_a_id': matchup[0],
                     'fighter_b_id': matchup[1],
