@@ -1180,7 +1180,7 @@ if __name__ == "__main__":
         fighter_a_id INTEGER,
         fighter_b_id INTEGER,
         fighter_a_prediction REAL,
-        fighter_b_prediction REAL,
+        fighter_b_prediction REAL
     );
 
     ALTER TABLE matchups DROP CONSTRAINT IF EXISTS matchup_id_order;
