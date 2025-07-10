@@ -132,7 +132,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
                   if (index !== -1) {
                     fightData[index] = updatedFight;
-                    console.log("Updated fight.")
+
+                    // Update .dataset.fight on all cards that use this fight
+                    document.querySelectorAll('.bet-card').forEach(card => {
+                      const stored = JSON.parse(card.dataset.fight || '{}');
+                      const sameFight =
+                        (stored.fighter_a_name === updatedFight.fighter_a_name && stored.fighter_b_name === updatedFight.fighter_b_name) ||
+                        (stored.fighter_a_name === updatedFight.fighter_b_name && stored.fighter_b_name === updatedFight.fighter_a_name);
+                    
+                      if (sameFight) {
+                        card.dataset.fight = JSON.stringify(updatedFight);
+                      
+                        // Recalculate prediction display
+                        const fighter = card.querySelector('.fighter-select')?.value;
+                        const oddsStr = card.querySelector('.odds-input')?.value?.trim();
+                        const result = card.querySelector('.text-sm.font-semibold');
+                      
+                        if (!fighter || !oddsStr || !result) return;
+                      
+                        const prediction = fighter === updatedFight.fighter_a_name
+                          ? updatedFight.prediction_a
+                          : updatedFight.prediction_b;
+                      
+                        const odds = parseInt(oddsStr);
+                        let decimalOdds = odds > 0 ? (odds / 100) + 1 : (100 / Math.abs(odds)) + 1;
+                        const b = decimalOdds - 1;
+                        const rawKelly = (b * prediction - (1 - prediction)) / b;
+                        const safeFraction = Math.max(0, Math.min(rawKelly * 0.25, 1));
+                      
+                        if (safeFraction <= 0) {
+                          result.textContent = "Don't bet, no value.";
+                        } else {
+                          result.textContent = `Bet ${(safeFraction * 100).toFixed(2)}% of your bankroll.`;
+                        }
+                      }
+                    });
+                  
+                    console.log("Updated fight and recalculated bet text.");
+                    updateEvRanking();
                   }
 
 									// Update the line with new prediction & odds
@@ -274,7 +311,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event: calculate bet
     calcBtn.addEventListener('click', () => {
-      const selected = JSON.parse(fightSelect.value);
+      const selected = JSON.parse(card.dataset.fight || '{}');
       const fighter = fighterSelect.value;
       const oddsStr = oddsInput.value.trim();
       if (!fighter || !oddsStr) {

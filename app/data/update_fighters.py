@@ -1199,5 +1199,5 @@ if __name__ == "__main__":
     conn.close()
     
     update_fighter_data()
-    update_matchups(clean=True)
+    update_matchups(clean=True) # Refactoring idea: scan for change in matchups first instead of manually specifying clean.
     update_odds()
