@@ -92,6 +92,23 @@ def get_matchup_prediction(fighter_a_id, fighter_b_id):
                 return None
     conn.close()
 
+# Input: str, a string that represents the beginning of a fighter's name, ex. "Charl"
+# Output: [str], a list of strings that contains all fighters in the database who's names start with the input string.
+def get_fighters_by_string(query):
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT id, name
+                FROM fighters
+                WHERE name ILIKE %s
+                LIMIT 10
+            """, (f'{query}%',))
+
+            results = [{'id': row[0], 'name': row[1]} for row in cur.fetchall()]
+    conn.close()
+    return results
+
 def set_matchup_prediction(fighter_a_id, fighter_b_id, pred_a, pred_b):
     conn = get_db_connection()
     with conn:

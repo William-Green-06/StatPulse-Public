@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>StatPulse | Predict</title>
+    <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/x-icon">
+    <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-indigo-900 shadow-md w-full fixed top-0 left-0 z-40">
+        <div class="relative max-w-[95vw] mx-auto py-4 flex items-center justify-between">
+
+            <!-- Logo (left or center depending on screen size) -->
+            <div class="text-xl font-bold text-white sm:w-auto w-full text-center sm:text-left">
+                <a href="/">
+                    <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="StatPulse Logo" class="h-10 mx-auto sm:mx-0" />
+                </a>
+            </div>
+
+            <!-- Navigation links (desktop only) -->
+            <nav class="hidden sm:flex space-x-6 text-white">
+              <a href="/" class="hover:text-blue-500">Home</a>
+              <a href="/predict" class="hover:text-blue-500">Predict</a>
+            </nav>
+
+            <!-- Mobile hamburger menu button -->
+            <div class="absolute right-4 sm:hidden">
+                <button onclick="toggleMobileMenu()" class="text-white focus:outline-none text-3xl">
+                    ☰
+                </button>
+        </div>
+      </div>
+
+      <!-- Mobile menu dropdown -->
+      <div id="mobile-menu" class="hidden sm:hidden px-4 pb-4 space-y-2 text-white">
+        <a href="/" class="block hover:text-blue-500">Home</a>
+        <a href="/predict" class="block hover:text-blue-500">Predict</a>
+      </div>
+    </header>
+
+    <!-- Page layout container -->
+    <main class="max-w-[90vw] mx-auto pt-20 px-4">
+        <!-- Predict page content here -->
+        <h1 class="text-5xl font-bold underline mb-8 text-center">Predict</h1>
+        <div class="flex flex-col sm:flex-row gap-6">
+            <!-- Left panel: Fighter 1 info -->
+            <div class="flex-1 bg-white p-6 rounded shadow-md">
+                <!-- Your form or content for Fighter 1 goes here -->
+                <h2 class="text-2xl font-semibold mb-4">Fighter 1</h2>
+                <!-- Name input -->
+                <label class="block mb-2 font-medium" for="fighter1-name">Name</label>
+                <div class="relative">
+                    <input
+                        id="fighter1-name"
+                        type="text"
+                        placeholder="Enter Fighter 1 Name"
+                        class="w-full border rounded px-3 py-2"
+                        autocomplete="off"
+                        oninput="searchFighters(this.value, 1)"
+                    />
+                                
+                    <!-- Dropdown -->
+                    <ul
+                        id="fighter1-suggestions"
+                        class="absolute z-50 w-full bg-white border rounded mt-1 max-h-48 overflow-auto hidden shadow-lg"
+                    ></ul>
+                </div>
+                <!-- Add more inputs here -->
+            </div>
+            
+            <!-- Right panel: Fighter 2 info -->
+            <div class="flex-1 bg-white p-6 rounded shadow-md">
+                <!-- Your form or content for Fighter 2 goes here -->
+                <h2 class="text-2xl font-semibold mb-4">Fighter 2</h2>
+                <label class="block mb-2 font-medium" for="fighter2-name">Name</label>
+                <div class="relative">
+                    <input
+                        id="fighter2-name"
+                        type="text"
+                        placeholder="Enter Fighter 2 Name"
+                        class="w-full border rounded px-3 py-2"
+                        autocomplete="off"
+                        oninput="searchFighters(this.value, 2)"
+                    />
+                                
+                    <!-- Dropdown -->
+                    <ul
+                        id="fighter2-suggestions"
+                        class="absolute z-50 w-full bg-white border rounded mt-1 max-h-48 overflow-auto hidden shadow-lg"
+                    ></ul>
+                </div>
+                <!-- Add more inputs here -->
+            </div>
+        </div>
+        <!-- Predict button -->
+        <div class="mt-6 text-center">
+            <button id="predict-button" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded">
+                Predict
+            </button>
+        </div>
+        <div id="predict-output" class="mt-6 text-center text-lg text-gray-800"></div>
+    </main>
+</body>
+<footer>
+    <script src="{{ url_for('static', filename='js/predict.js') }}"></script>
+    <script>
+        function toggleMobileMenu() {
+          document.getElementById("mobile-menu").classList.toggle("hidden");
+        }
+    </script>
+</footer>
+</html>

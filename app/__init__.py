@@ -1,7 +1,9 @@
 from flask import Flask
 from app.routes.api.upcoming import upcoming_api
 from app.routes.api.predict import predict_api
+from app.routes.api.fighter_search import fighter_search_api
 from app.routes.home import home_bp
+from app.routes.predict import predict_bp
 import os
 
 def create_app():
@@ -15,5 +17,7 @@ def create_app():
     # Register API blueprints
     app.register_blueprint(upcoming_api, url_prefix='/api')
     app.register_blueprint(predict_api, url_prefix='/api')
+    app.register_blueprint(fighter_search_api, url_prefix='/api')
     app.register_blueprint(home_bp)
+    app.register_blueprint(predict_bp)
     return app
