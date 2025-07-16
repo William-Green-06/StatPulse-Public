@@ -14,7 +14,7 @@
 
             <!-- Logo (left or center depending on screen size) -->
             <div class="text-xl font-bold text-white sm:w-auto w-full text-center sm:text-left">
-                <a href="/">
+                <a href="/" class="inline-block">
                     <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="StatPulse Logo" class="h-10 mx-auto sm:mx-0" />
                 </a>
             </div>
@@ -34,7 +34,7 @@
       </div>
 
       <!-- Mobile menu dropdown -->
-      <div id="mobile-menu" class="hidden sm:hidden px-4 pb-4 space-y-2 text-white">
+      <div id="mobile-menu" class="hidden sm:hidden px-4 pb-4 space-y-2 text-white text-center">
         <a href="/" class="block hover:text-blue-500">Home</a>
         <a href="/predict" class="block hover:text-blue-500">Predict</a>
       </div>
