@@ -634,6 +634,12 @@ def processFight(link, fighter):
                         temp_fighter.pfp_losses += 1
                         if rank == '00':
                             temp_fighter.pfp_champ_losses += 1
+                    
+                    # Now we flip the result for the return
+                    if result == 'W':
+                        result = 'L'
+                    elif result == 'L':
+                        result = 'W'
 
             # Next, find the fight format and final round end time to help calculate certain metrics like SLpM and SApM
             round_label = getElementWithString(soup, 'i', 'b-fight-details__label', 'Round:').find_parent().text.strip()
