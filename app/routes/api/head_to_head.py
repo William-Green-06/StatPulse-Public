@@ -11,19 +11,19 @@ def robust_scale_with_clipping(val, min_val, max_val, median, scale):
 
 def calculateFighterSpecs(fighter_data):
     # Striking
-    reach = 0.7 * robust_scale_with_clipping(float(fighter_data['reach']), 64.0000, 79.0000, 72.0000, 6.0000)
+    reach = 0.8 * robust_scale_with_clipping(float(fighter_data['reach']), 64.0000, 79.0000, 72.0000, 6.0000)
     SLpM = 1.5 * robust_scale_with_clipping(float(fighter_data['slpm']), 0.0000, 6.5489, 3.4359, 1.9960)
-    SApM = 1.2 * (100 - robust_scale_with_clipping(float(fighter_data['sapm']), 0.0000, 5.9543, 2.9850, 1.8457))
-    StrDef = 1.0 * robust_scale_with_clipping(float(fighter_data['strdef']), 0.0000, 69.6072, 55.7538, 13.3161)
+    SApM = 0.7 * (100 - robust_scale_with_clipping(float(fighter_data['sapm']), 0.0000, 5.9543, 2.9850, 1.8457))
+    StrDef = 1.3 * robust_scale_with_clipping(float(fighter_data['strdef']), 0.0000, 69.6072, 55.7538, 13.3161)
     total_head_strikes = 0.8 * robust_scale_with_clipping(float(fighter_data['total_head_strikes']), 0.0000, 593.0000, 117.0000, 220.0000)
-    total_body_strikes = 0.6 * robust_scale_with_clipping(float(fighter_data['total_body_strikes']), 0.0000, 200.0000, 34.0000, 68.0000)
+    total_body_strikes = 0.8 * robust_scale_with_clipping(float(fighter_data['total_body_strikes']), 0.0000, 200.0000, 34.0000, 68.0000)
     total_leg_strikes = 0.6 * robust_scale_with_clipping(float(fighter_data['total_leg_strikes']), 0.0000, 168.0000, 23.0000, 53.0000)
-    total_strikes_landed = 0.7 * robust_scale_with_clipping(float(fighter_data['total_strikes_landed']), 0.0000, 941.0000, 181.0000, 338.0000)
-    total_strikes_missed = 0.7 * (100 - robust_scale_with_clipping(float(fighter_data['total_strikes_missed']), 0.0000, 2109.4500, 398.0000, 759.0000))
+    total_strikes_landed = 1.0 * robust_scale_with_clipping(float(fighter_data['total_strikes_landed']), 0.0000, 941.0000, 181.0000, 338.0000)
+    total_strikes_missed = 0.3 * (100 - robust_scale_with_clipping(float(fighter_data['total_strikes_missed']), 0.0000, 2109.4500, 398.0000, 759.0000))
     StrAcc = 1.5 * robust_scale_with_clipping(float(fighter_data['stracc']), 0.0000, 61.6040, 45.0704, 12.3999)
     head_strikes_accuracy = 1.0 * robust_scale_with_clipping(float(fighter_data['head_strikes_accuracy']), 0.0000, 35.4735, 26.9266, 6.7514)
-    body_strikes_accuracy = 0.8 * robust_scale_with_clipping(float(fighter_data['body_strikes_accuracy']), 0.0000, 47.3684, 40.6530, 6.2962)
-    leg_strikes_accuracy = 0.6 * robust_scale_with_clipping(float(fighter_data['leg_strikes_accuracy']), 0.0000, 50.0000, 44.7761, 5.3837)
+    body_strikes_accuracy = 1.0 * robust_scale_with_clipping(float(fighter_data['body_strikes_accuracy']), 0.0000, 47.3684, 40.6530, 6.2962)
+    leg_strikes_accuracy = 0.8 * robust_scale_with_clipping(float(fighter_data['leg_strikes_accuracy']), 0.0000, 50.0000, 44.7761, 5.3837)
     aggression_metric = 0.8 * robust_scale_with_clipping(float(fighter_data['aggression_metric']), 0.0000, 20.1341, 11.3333, 6.1340)
 
     striking_score = round(((reach + SLpM + SApM + StrDef + total_head_strikes + total_body_strikes + total_leg_strikes
@@ -78,9 +78,11 @@ def calculateFighterSpecs(fighter_data):
     knockdown_risk =  0.8 * (100 - robust_scale_with_clipping(float(fighter_data['knockdown_risk']), 0.0000, 50.0000, 0.0000, 21.4286))
     knockdown_durability = 0.85 * knockdown_durability
     TDDef = 0.85 * TDDef
+    # Consider Adding SApM
+    SApM = 0.5 * robust_scale_with_clipping(float(fighter_data['sapm']), 0.0000, 5.9543, 2.9850, 1.8457)
 
     durability_score = round(((losses + ko_losses + ko_risk + sub_losses + sub_risk + knockdown_risk + finish_rate
-                               + TDDef + knockdown_durability + total_fight_time + avg_fight_time) / 845) * 100)
+                               + TDDef + knockdown_durability + total_fight_time + avg_fight_time + SApM) / 895) * 100)
     durability_score = max(1, min(durability_score, 100))
 
     # Recent Performance
