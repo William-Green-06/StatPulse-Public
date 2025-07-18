@@ -4,6 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
 	const list = document.getElementById('fight-list');
 	list.innerHTML = '<li>Loading upcoming fights...</li>' // Create loading message on page load
   const fightData = [];
+
 	fetch('/api/upcoming')
 		.then(response => response.json())
 		.then(data => {
@@ -199,7 +200,127 @@ document.addEventListener('DOMContentLoaded', () => {
 						});
 					});
 				}
+        // Head-to-Head
+        // Create head-to-head button
+				const headToheadBtn = document.createElement('button');
+				headToheadBtn.textContent = 'H2H';
+				headToheadBtn.className = "px-3 py-1 ml-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition";
+        li.appendChild(headToheadBtn);
+        headToheadBtn.addEventListener('click', () => {
+          const h2hInputData = new URLSearchParams({
+            fighter_a_id: fight.fighter_a_id,
+						fighter_b_id: fight.fighter_b_id
+          });
 
+          const url = `/api/head-to-head?${h2hInputData.toString()}`;
+
+          fetch(url, {
+								method: 'GET',
+								headers: {
+									'Content-Type': 'application/json'
+								}
+							})
+            .then(response => response.json())
+            .then(data => {
+              const modal = document.getElementById('h2h-modal');
+              const content = document.getElementById('h2h-content');
+              const closeModalBtn = document.getElementById('closeModalBtn');
+              closeModalBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+              });
+              content.innerHTML = ''; // Clear old content
+              
+              // Metadata block
+              const metadataHTML = `
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <h2 class="text-lg font-bold">${fight.fighter_a_name}</h2>
+                    <p>Age: ${data.fighter_a_specs.metadata.age}</p>
+                    <p>Height: ${data.fighter_a_specs.metadata.height}</p>
+                    <p>Record: ${data.fighter_a_specs.metadata.wins} - ${data.fighter_a_specs.metadata.losses}</p>
+                    <p>Reach: ${data.fighter_a_specs.metadata.reach}</p>
+                  </div>
+                  <div>
+                    <h2 class="text-lg font-bold">${fight.fighter_b_name}</h2>
+                    <p>Age: ${data.fighter_b_specs.metadata.age}</p>
+                    <p>Height: ${data.fighter_b_specs.metadata.height}</p>
+                    <p>Record: ${data.fighter_b_specs.metadata.wins} - ${data.fighter_b_specs.metadata.losses}</p>
+                    <p>Reach: ${data.fighter_b_specs.metadata.reach}</p>
+                  </div>
+                </div>
+              `;
+
+              // Radar Chart Canvas
+              const chartHtml = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div class="w-full max-w-md mx-auto" style="aspect-ratio: 1 / 1;">
+                    <h2 class="text-lg font-bold text-center">Overall Rating: ${data.fighter_a_specs.overall}</h2>
+                    <canvas id="radarChartA" width="300" height="300" class="w-full h-full block"></canvas>
+                  </div>
+                  <div class="w-full max-w-md mx-auto" style="aspect-ratio: 1 / 1;">
+                    <h2 class="text-lg font-bold text-center">Overall Rating: ${data.fighter_b_specs.overall}</h2>
+                    <canvas id="radarChartB" width="300" height="300" class="w-full h-full block"></canvas>
+                  </div>
+                </div>
+              `;
+
+              content.innerHTML = metadataHTML + chartHtml;
+              modal.classList.remove('hidden');
+
+              // Wait for canvas to render, then draw charts
+              setTimeout(() => {
+                const radarLabels = ['Striking', 'Grappling', 'Finish Threat', 'Durability', 'Recent Performance', 'Prestige'];
+              
+                new Chart(document.getElementById('radarChartA'), {
+                  type: 'radar',
+                  data: {
+                    labels: radarLabels,
+                    datasets: [{
+                      label: fight.fighter_a_name,
+                      data: [
+                        data.fighter_a_specs.striking,
+                        data.fighter_a_specs.grappling,
+                        data.fighter_a_specs.finish_threat,
+                        data.fighter_a_specs.durability,
+                        data.fighter_a_specs.recent_performance,
+                        data.fighter_a_specs.prestige
+                      ],
+                      backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                      borderColor: 'rgba(59, 130, 246, 1)',
+                      pointBackgroundColor: 'rgba(59, 130, 246, 1)'
+                    }]
+                  },
+                  options: { scales: { r: { min: 0, max: 100 } } }
+                });
+              
+                new Chart(document.getElementById('radarChartB'), {
+                  type: 'radar',
+                  data: {
+                    labels: radarLabels,
+                    datasets: [{
+                      label: fight.fighter_b_name,
+                      data: [
+                        data.fighter_b_specs.striking,
+                        data.fighter_b_specs.grappling,
+                        data.fighter_b_specs.finish_threat,
+                        data.fighter_b_specs.durability,
+                        data.fighter_b_specs.recent_performance,
+                        data.fighter_b_specs.prestige
+                      ],
+                      backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                      borderColor: 'rgba(220, 38, 38, 1)',
+                      pointBackgroundColor: 'rgba(220, 38, 38, 1)'
+                    }]
+                  },
+                  options: { scales: { r: { min: 0, max: 100 } } }
+                });
+              }, 100); // slight delay to ensure canvases are in DO
+            })
+            .catch(error => {
+              console.error('Error fetching head-to-head data:', error);
+              alert('Failed to fetch head-to-head data.');
+            });
+        });
 
 			});
       addBetCard(); // Create initial bet card

@@ -5,6 +5,7 @@
     <title>StatPulse | Home</title>
     <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/x-icon">
     <link href="{{ url_for('static', filename='css/output.css') }}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
@@ -44,6 +45,15 @@
     <div class="w-full flex justify-center pt-20">
         <!-- Centered column layout -->
         <div class="w-full max-w-[90vw] px-4">
+            <!-- Modal container (hidden by default) -->
+            <div id="h2h-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-auto">
+              <div class="bg-white rounded p-6 mt-4 mb-4 w-[calc(100%-2rem)] max-h-[calc(100vh-2rem)] overflow-auto relative">
+                <button id="closeModalBtn" class="absolute top-2 right-2 text-gray-600 hover:text-gray-900 cursor-pointer z-10">&times;</button>
+                <div id="h2h-content"></div>
+              </div>
+            </div>
+
+
             <h1 class="text-5xl font-bold underline mb-8 text-center">Upcoming Fights</h1>
 
             <!-- Fight list -->
