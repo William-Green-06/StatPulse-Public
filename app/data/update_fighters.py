@@ -13,6 +13,8 @@ from psycopg2.extras import execute_values
 import curl_cffi
 from app.data.database import get_db_connection
 import sys
+from playwright.sync_api import sync_playwright
+import json
 
 class Fighter:
     def __init__(self, name='', link='', pfp_rank=0, div_rank=0, height=0, age=0, reach=0, wins=0, losses=0, total_fights=0, ranked_wins=0, ranked_losses=0, pfp_wins=0, pfp_losses=0, champ_wins=0, champ_losses=0, pfp_champ_wins=0, pfp_champ_losses=0, title_def=0, title_loss=0, ko_wins=0, ko_losses=0, sub_wins=0, sub_losses = 0, total_fight_time=0, strikes_absorbed=0, total_opp_strikes=0, subs_attempted=0, total_head_strikes=0, total_body_strikes=0, total_leg_strikes=0, 
@@ -842,6 +844,18 @@ def get_fighters_from_card(card_link=''):
         fighter_links.append(fighter_link_2)
     return fighter_links
 
+def american_to_probability(odds):
+    if odds < 0:
+        return -odds / (-odds + 100)
+    else:
+        return 100 / (odds + 100)
+
+def probability_to_american(prob):
+    if prob >= 0.5:
+        return -round(prob / (1 - prob) * 100)
+    else:
+        return round((1 - prob) / prob * 100)
+
 # Get the opening odds of a fight from BestOdds
 # 
 # Params:
@@ -851,49 +865,465 @@ def get_fighters_from_card(card_link=''):
 #
 # Returns:
 # tuple(int, int), the odds of the fight with the respective indexes holding the odds in the same order as the the fighter names given.
-def getFightOdds(fighter_1_name, fighter_2_name, event_date):
-    ODDS_URL = ODDS_URL = 'https://www.bestfightodds.com'
-    req_link = ODDS_URL + '/search?query=' + fighter_1_name.replace(' ', '+')
-    search_response_html = curl_cffi.get(req_link, impersonate='firefox')
-    search_response_html.raise_for_status() # Ensure good connection
-    soup = BeautifulSoup(search_response_html.text, 'html.parser')
-    rows = soup.find_all('tr')
-
-    fighter_1_link = ''
-    for row in rows:
-        link_tag = row.find('a')
-        if link_tag and link_tag.text.strip() == fighter_1_name:
-            fighter_1_link = link_tag['href']  # returns relative URL like "/fighters/Alexander-Volkanovski-9523"
-            break
-            
-    if fighter_1_link != '':
-        fight_list_html = curl_cffi.get(ODDS_URL + fighter_1_link, impersonate='firefox', timeout=120)
-        soup = BeautifulSoup(fight_list_html.text, 'html.parser')
+def getFightOdds(fighter_1_name, fighter_2_name, event_date, website="BestFightOdds", link=''):
+    if website == 'BestFightOdds':
+        ODDS_URL = ODDS_URL = 'https://www.bestfightodds.com'
+        req_link = ODDS_URL + '/search?query=' + fighter_1_name.replace(' ', '+')
+        search_response_html = curl_cffi.get(req_link, impersonate='firefox')
+        search_response_html.raise_for_status() # Ensure good connection
+        soup = BeautifulSoup(search_response_html.text, 'html.parser')
         rows = soup.find_all('tr')
-        fighter_1_odds = 0
-        fighter_2_odds = 0
-        # Fighter 1's name will always be on top, need to find fighter 2's name and compare
-        for i in range(len(rows)):
-            text_items = rows[i].find_all('a')
-            try:
-                for item in text_items:
-                    if item.text.strip() == fighter_2_name:
-                        date_text = rows[i].find('td', style="padding-left: 20px; color: #767676").get_text(strip=True)
-                        # Check if date is within valid range of given date
-                        search_date = parser.parse(date_text)
-                        distance = abs((event_date - search_date).days)
-                        if distance <= 6:
-                            # we have the right row for sure, get odds for the row before it (Fighter 1 odds) and this row (Fighter 2 odds)
-                            fighter_1_odds = rows[i - 1].find('td', class_='moneyline').get_text(strip=True)
-                            fighter_2_odds = rows[i].find('td', class_='moneyline').get_text(strip=True)
-                            return (int(fighter_1_odds), int(fighter_2_odds))
-                        else:
-                            pass # keep searching
-            except:
-                pass
-        return None
-    else:
-        return None # Could not find fighter 1, no odds.
+
+        fighter_1_link = ''
+        for row in rows:
+            link_tag = row.find('a')
+            if link_tag and link_tag.text.strip() == fighter_1_name:
+                fighter_1_link = link_tag['href']  # returns relative URL like "/fighters/Alexander-Volkanovski-9523"
+                break
+
+        if fighter_1_link != '':
+            fight_list_html = curl_cffi.get(ODDS_URL + fighter_1_link, impersonate='firefox', timeout=120)
+            soup = BeautifulSoup(fight_list_html.text, 'html.parser')
+            rows = soup.find_all('tr')
+            fighter_1_odds = 0
+            fighter_2_odds = 0
+            # Fighter 1's name will always be on top, need to find fighter 2's name and compare
+            for i in range(len(rows)):
+                text_items = rows[i].find_all('a')
+                try:
+                    for item in text_items:
+                        if item.text.strip() == fighter_2_name:
+                            date_text = rows[i].find('td', style="padding-left: 20px; color: #767676").get_text(strip=True)
+                            # Check if date is within valid range of given date
+                            search_date = parser.parse(date_text)
+                            distance = abs((event_date - search_date).days)
+                            if distance <= 6:
+                                # we have the right row for sure, get odds for the row before it (Fighter 1 odds) and this row (Fighter 2 odds)
+                                fighter_1_odds = rows[i - 1].find('td', class_='moneyline').get_text(strip=True)
+                                fighter_2_odds = rows[i].find('td', class_='moneyline').get_text(strip=True)
+                                return (int(fighter_1_odds), int(fighter_2_odds))
+                            else:
+                                pass # keep searching
+                except:
+                    pass
+            return None
+        else:
+            return None # Could not find fighter 1, no odds.
+    elif website == 'FightOdds.io':
+        # For now, we're going to manually feed the link with the event odds.
+        if link == '':
+            print("Error: no link provided, returning None.")
+            return None
+        # First we need to get the event ID for the queries
+        # We can parse the provided link for this.
+        # EX: "https://fightodds.io/odds/6402/ufc-fight-night-whittaker-vs-de-ridder"
+        # we need the "6402" from the link. Use regex.
+        event_id = re.search(r'/odds/(\d+)(?:/|$)', link)
+        if event_id == None:
+            print("Error parsing provided link, returning None.")
+            return None
+        event_id = int(event_id.group(1))
+        # Now we need to make the POST requests and see what we can do.
+        # All POST requests will be made to https://api.fightodds.io/gql
+        POST_URL = 'https://api.fightodds.io/gql'
+
+        # headers = {
+        #     "Content-Type": "application/json"
+        # }
+
+        # Process for getting odds for a fighter:
+        # 1: Make the first request to get all fighters
+
+        # TODO: make this somehow only run once when getting odds so we don't get this list every time we're looking for a matchup
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context()
+            page = context.new_page()
+
+            page.goto(link)
+            # cookies = context.cookies()
+            # headers = {
+            #     "Content-Type": "application/json",
+            #     "User-Agent": page.evaluate("navigator.userAgent"),
+            # }
+
+            # cookie_string = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
+
+            # JSON Request data that can get all the fighters in the event
+            main_req_payload = {
+                "query": """
+                    query EventOfferTableQrQuery(
+                        $eventPk: Int!
+                        $isCancelled: Boolean
+                    ) {
+                        sportsbooks: allSportsbooks(hasOdds: true) {
+                            ...EventOfferTable_sportsbooks
+                        }
+                        eventOfferTable(pk: $eventPk, isCancelled: $isCancelled) {
+                            slug
+                            pk
+                            name
+                            ...EventOfferTable_eventOfferTable
+                            id
+                        }
+                    }
+
+                    fragment EventOfferTable_eventOfferTable on EventOfferTableNode {
+                        name
+                        pk
+                        fightOffers {
+                            edges {
+                                node {
+                                    id
+                                    fighter1 {
+                                        firstName
+                                        lastName
+                                        slug
+                                        id
+                                    }
+                                    fighter2 {
+                                        firstName
+                                        lastName
+                                        slug
+                                        id
+                                    }
+                                    bestOdds1
+                                    bestOdds2
+                                    slug
+                                    propCount
+                                    isCancelled
+                                    straightOffers {
+                                        edges {
+                                            node {
+                                                sportsbook {
+                                                    id
+                                                    shortName
+                                                    slug
+                                                }
+                                                outcome1 {
+                                                    id
+                                                    odds
+                                                    ...OddsWithArrowButton_outcome
+                                                }
+                                                outcome2 {
+                                                    id
+                                                    odds
+                                                    ...OddsWithArrowButton_outcome
+                                                }
+                                                id
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    fragment EventOfferTable_sportsbooks on SportsbookNodeConnection {
+                        edges {
+                            node {
+                                id
+                                shortName
+                                slug
+                            }
+                        }
+                    }
+
+                    fragment OddsWithArrowButton_outcome on OutcomeNode {
+                        id
+                        ...OddsWithArrow_outcome
+                    }
+
+                    fragment OddsWithArrow_outcome on OutcomeNode {
+                        odds
+                        oddsPrev
+                    }
+                """, 
+                "variables": {
+                    "eventPk": event_id,
+                    "isCancelled":False
+                }
+            }
+
+            # response = requests.post(
+            #     POST_URL,
+            #     headers={
+            #         **headers,
+            #         "Cookie": cookie_string
+            #     },
+            #     json=main_req_payload
+            # )
+
+            response = page.request.post(
+                POST_URL,
+                data=main_req_payload,
+                headers={'Content-Type': 'application/json'}
+            )
+
+            print(response.status)
+            #print(response.status_code)
+            #print(response.text)
+            all_fight_data = response.json()
+            browser.close()
+            time.sleep(random.uniform(6, 12))  # wait to avoid rate limiting
+
+        # 2: Find the fighter by name, store if the fighter is 1 or 2.
+        fights = all_fight_data['data']['eventOfferTable']['fightOffers']['edges']
+        #print(fights)
+        fight_index = -1
+        order_swapped = False # Is the order of the fighters swapped? (outcome1 applies to fighter 2, not 1)
+        for index, fight in enumerate(fights):
+            fighter_1_first_name = fight['node']['fighter1']['firstName']
+            fighter_1_last_name = fight['node']['fighter1']['lastName']
+            fighter_1_full_name = fighter_1_first_name + ' ' + fighter_1_last_name
+
+            fighter_2_first_name = fight['node']['fighter2']['firstName']
+            fighter_2_last_name = fight['node']['fighter2']['lastName']
+            fighter_2_full_name = fighter_2_first_name + ' ' + fighter_2_last_name
+            if fighter_1_full_name.lower() == fighter_1_name.lower() and fighter_2_full_name.lower() == fighter_2_name.lower():
+                print(f"Found fighters at index {index}")
+                fight_index = index
+                break
+            elif fighter_2_full_name.lower() == fighter_1_name.lower() and fighter_1_full_name.lower() == fighter_2_name.lower():
+                print(f"Found fighters at index {index}")
+                fight_index = index
+                order_swapped = True
+                break
+
+        if fight_index < 0:
+            print("Could not find fighters.")
+            return None
+        # 3: In the branch the fighter was found in, go through the 'edges' field in the 'straightOffers' field,
+        #    for each 'node' entry get the value of the 'id' field for either 'outcome1' or 'outcome2' respectively
+        fighter_1_outcome_ids = []
+        fighter_2_outcome_ids = []
+        try:
+            if order_swapped == False:
+                #print(json.dumps(fights[fight_index], indent=2))
+                offers = fights[fight_index]['node']['straightOffers']['edges']
+                for offer in offers:
+                    outcomes = offer['node']
+                    fighter_1_outcome_ids.append(outcomes['outcome1']['id'])
+                    fighter_2_outcome_ids.append(outcomes['outcome2']['id'])
+            else:
+                offers = fights[fight_index]['node']['straightOffers']['edges']
+                for offer in offers:
+                    outcomes = offer['node']
+                    fighter_1_outcome_ids.append(outcomes['outcome2']['id'])
+                    fighter_2_outcome_ids.append(outcomes['outcome1']['id'])
+        except:
+            print("Odds not present for one fighter, returning None.")
+            return None
+
+        #print(f"Fighter 1 offer id's: {fighter_1_outcome_ids}")
+        #print(f"Fighter 2 offer id's: {fighter_2_outcome_ids}")
+        outcome_id_lists = [fighter_1_outcome_ids, fighter_2_outcome_ids]
+
+        # 4: Make another request for each of the collected id values with the other query
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto(link)
+            cookies = context.cookies()
+            cookie_string = "; ".join([f"{c['name']}={c['value']}" for c in cookies])
+            ua = page.evaluate("navigator.userAgent")
+
+            session = requests.Session()
+            session.headers.update({
+                "Content-Type": "application/json",
+                "User-Agent": ua,
+                "Cookie": cookie_string
+            })
+
+            opening_odds_lists = [[], []]
+            for i in range(len(outcome_id_lists)):
+                for id in outcome_id_lists[i]:
+                    # Make a request
+                    specific_req_payload = {
+                        "query": """
+                            query PopoverOddsChartQuery(
+                                $outcomeId: ID!
+                            ) {
+                                odds: allOdds(outcome: $outcomeId, orderBy: "timestamp") {
+                                    ...OddsChart_odds
+                                    edges {
+                                        node {
+                                            timestamp
+                                            id
+                                        }
+                                    }
+                                }
+                                outcome(id: $outcomeId) {
+                                    ...OutcomeName_outcome
+                                    ...AddBetForm_outcome
+                                    ...DialogAddBet_outcome
+                                    ...ButtonAddParlay_outcome
+                                    offer {
+                                        sportsbook {
+                                            fullName
+                                            slug
+                                            shortName
+                                            websiteUrl
+                                            id
+                                        }
+                                    timestamp
+                                    id
+                                }
+                                id
+                            }
+                        }
+                        
+                        fragment AddBetForm_outcome on OutcomeNode {
+                            ...OutcomeName_outcome
+                            id
+                            odds
+                            fighter {
+                                id
+                            }
+                            offer {
+                                fight {
+                                    fighter1 {
+                                        id
+                                        lastName
+                                    }
+                                    fighter2 {
+                                        id
+                                        lastName
+                                    }
+                                    id
+                                }
+                                id
+                            }
+                        }
+                        
+                        fragment ButtonAddParlay_outcome on OutcomeNode {
+                            ...OutcomeName_outcome
+                            id
+                            odds
+                            isNot
+                            fighter {
+                                firstName
+                                lastName
+                                id
+                            }
+                            offer {
+                                offerType {
+                                    offerTypeId
+                                    description
+                                    value
+                                    id
+                                }
+                                fight {
+                                    id
+                                    fighter1 {
+                                        lastName
+                                        id
+                                    }
+                                    fighter2 {
+                                        lastName
+                                        id
+                                    }
+                                }
+                                sportsbook {
+                                    id
+                                }
+                                id
+                            }
+                        }
+                        
+                        fragment DialogAddBet_outcome on OutcomeNode {
+                            ...OutcomeName_outcome
+                            id
+                            odds
+                            isNot
+                            fighter {
+                                firstName
+                                lastName
+                                id
+                            }
+                            offer {
+                                offerType {
+                                    offerTypeId
+                                    description
+                                    value
+                                    id
+                                }
+                                sportsbook {
+                                    fullName
+                                    id
+                                }
+                                id
+                            }
+                        }
+                        
+                        fragment OddsChart_odds on OddsNodeConnection {
+                            edges {
+                                node {
+                                    odds
+                                    timestamp
+                                    id
+                                }
+                            }
+                        }
+                        
+                        fragment OutcomeName_outcome on OutcomeNode {
+                            odds
+                            isNot
+                            fighter {
+                                firstName
+                                lastName
+                                id
+                            }
+                            offer {
+                                offerType {
+                                    notDescription
+                                    offerTypeId
+                                    description
+                                    value
+                                    id
+                                }
+                            id
+                        }
+                    }
+                        """,
+                        "variables":{"outcomeId": id}
+                    }
+                    
+                    response = session.post(
+                        POST_URL,
+                        json=specific_req_payload
+                        #headers={'Content-Type': 'application/json'}
+                    )
+
+                    #print(response.status_code)
+
+                    # 5: in each subsequent request, navtigate data/odds/edges/0/node and get the value in the 'odds' field and add to a list
+                    try:
+                        data = response.json()
+                        opening_odds = data['data']['odds']['edges'][0]['node']['odds']
+                        opening_odds_lists[i].append(opening_odds)
+                    except:
+                        print("Error parsing odds, returning None.")
+                        return None
+
+                    time.sleep(random.uniform(1, 3)) # TODO: See if this can be reduced or even removed
+            
+            browser.close()
+
+        # 6: average the odds and return
+        print(f"Opening odds lists: {opening_odds_lists}")
+        avg_odds_list = []
+        for odds_list in opening_odds_lists:
+            probs = [american_to_probability(odds) for odds in odds_list]
+            avg_prob = sum(probs) / len (probs)
+            avg_odds = probability_to_american(avg_prob)
+            avg_odds_list.append(avg_odds)
+        
+        if order_swapped:
+            avg_odds_list.reverse
+        
+        return (avg_odds_list[0], avg_odds_list[1])
 
 # Updates the fighters table with all applicable stats excluding opening odds
 def update_fighter_data():
@@ -1048,7 +1478,7 @@ def update_matchups(clean=False):
     conn.close()
 
 # Gets current opening odds from BestFightOdds if possible.  Will only get odds for fighters currently in the matchup table, odds cannot be scraped for not-upcoming fights and will have to be manually entered.
-def update_odds():
+def update_odds(website='', link=''):
     conn = get_db_connection()
 
     with conn:
@@ -1067,7 +1497,7 @@ def update_odds():
                 print(f"({fighter_a_name}, {fighter_b_name})")
 
                 date = datetime.now()
-                odds = getFightOdds(fighter_a_name, fighter_b_name, date)
+                odds = getFightOdds(fighter_a_name, fighter_b_name, date, website=website, link=link)
                 if odds != None:
                     cur.execute("UPDATE fighters SET odds = %s WHERE id = %s;", (odds[0], fighter_a_id))
                     cur.execute("UPDATE fighters SET odds = %s WHERE id = %s;", (odds[1], fighter_b_id))
@@ -1206,4 +1636,23 @@ if __name__ == "__main__":
     
     update_fighter_data()
     update_matchups(clean=True) # Refactoring idea: scan for change in matchups first instead of manually specifying clean.
-    update_odds()
+
+    odds_site = 'BestFightOdds'
+    odds_link = ''
+    args = sys.argv
+    if '-oweb' in args:
+        index = args.index('-oweb')
+        try:
+            value = args[index + 1]
+            odds_site = value
+        except IndexError:
+            print("Error: -oweb flag provided but no site value given.")
+        try:
+            value = args[index + 2]
+            odds_link = value
+        except IndexError:
+            print("Error: -oweb flag provided but no link value given.")
+    else:
+        print("No -oweb flag found.")
+
+    update_odds(website=odds_site, link=odds_link)
