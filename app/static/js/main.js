@@ -519,8 +519,11 @@ document.addEventListener('DOMContentLoaded', () => {
         fraction: safeFraction
       });
     });
+
+    // Step 2: Sort by kelly fraction
+    rawResults.sort((a, b) => b.fraction - a.fraction);
   
-    // Step 2: Calculate final bets using cascading/rounding
+    // Step 3: Calculate final bets using cascading/rounding
     const results = rawResults.map(entry => {
       let betAmount = 0;
     
@@ -538,9 +541,6 @@ document.addEventListener('DOMContentLoaded', () => {
     
       return { ...entry, bet: betAmount };
     });
-  
-    // Step 3: Sort by final bet amount
-    results.sort((a, b) => b.bet - a.bet);
   
     // Step 4: Render
     if (results.length === 0) {
