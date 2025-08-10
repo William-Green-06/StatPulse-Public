@@ -15,6 +15,30 @@ document.addEventListener('DOMContentLoaded', () => {
 				const li = document.createElement('li');
 				li.className = "flex items-center gap-2 text-lg px-4 py-2 max-w-full overflow-x-auto font-sans font-bold";
 
+        // Create span for the closeness icon
+        // 🤏 == difference of 5 or less in probability, super close
+        // ⚔️ == difference greater than 5 but less than 10 in prob, close
+        // 💪 == difference greater than 10 but less than 20 in prob, edge
+        // 💎 == difference greater than 20 but less than 30 in prob, favorite
+        // 🏅 == difference of 30 or more, heavy favorite
+
+        const closenessRank = document.createElement('span')
+        // Determine closeness
+        let closeness = Math.abs((fight.prediction_a * 100) - 50)
+        console.log("Closeness: " + closeness)
+        if (closeness >= 30) {
+          closenessRank.textContent = '🏅';
+        } else if (closeness >= 20) {
+          closenessRank.textContent = '💎';
+        } else if (closeness >= 10) {
+          closenessRank.textContent = '💪';
+        } else if (closeness > 5) {
+          closenessRank.textContent = '⚔️';
+        } else {
+          closenessRank.textContent = '🤏';
+        }
+
+
 				// Create spans for each fighter's name
 				const fighterA = document.createElement('span');
 				fighterA.textContent = fight.fighter_a_name;
@@ -38,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
 				spacer.textContent = '--'
 
 				// Append in order to li
+        li.appendChild(closenessRank);
 				li.appendChild(fighterA);
 				li.appendChild(vsText);
 				li.appendChild(fighterB);
@@ -173,6 +198,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     updateEvRanking();
                   }
 
+                  // Update closeness icon
+                  let closeness = Math.abs((updatedFight.prediction_a * 100) - 50)
+                  console.log("Closeness: " + closeness)
+                  if (closeness >= 30) {
+                    closenessRank.textContent = '🏅';
+                  } else if (closeness >= 20) {
+                    closenessRank.textContent = '💎';
+                  } else if (closeness >= 10) {
+                    closenessRank.textContent = '💪';
+                  } else if (closeness > 5) {
+                    closenessRank.textContent = '⚔️';
+                  } else {
+                    closenessRank.textContent = '🤏';
+                  }
+
 									// Update the line with new prediction & odds
 									predictionText.textContent = `Prediction: ${(updatedFight.prediction_a * 100).toFixed(2)}% - ${(updatedFight.prediction_b * 100).toFixed(2)}% -- Odds to look for: ${updatedFight.good_odds} ${updatedFight.winner_last_name}`;
 									// Remove old color classes if needed
@@ -200,6 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
 						});
 					});
 				}
+
         // Head-to-Head
         // Create head-to-head button
 				const headToheadBtn = document.createElement('button');
@@ -269,7 +310,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
               // Wait for canvas to render, then draw charts
               setTimeout(() => {
-                const radarLabels = ['Striking', 'Grappling', 'Finish Threat', 'Durability', 'Recent Performance', 'Prestige'];
+                const radarLabels = ['Striking', 'Grappling', 'Finish Threat', 'Durability', 'Recent\nPerformance', 'Prestige'];
               
                 new Chart(document.getElementById('radarChartA'), {
                   type: 'radar',
@@ -315,6 +356,27 @@ document.addEventListener('DOMContentLoaded', () => {
                   options: { scales: { r: { min: 0, max: 100 } } }
                 });
               }, 100); // slight delay to ensure canvases are in DO
+
+              // Insights list area
+              // Build pros section
+              const prosHtml = `
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                  <div>
+                    <h3 class="text-md font-bold mb-2">${fight.fighter_a_name} Strengths</h3>
+                    <ul class="list-disc list-inside text-sm text-green-700">
+                      ${data.fighter_a_pros.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                  </div>
+                  <div>
+                    <h3 class="text-md font-bold mb-2">${fight.fighter_b_name} Strengths</h3>
+                    <ul class="list-disc list-inside text-sm text-green-700">
+                      ${data.fighter_b_pros.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                  </div>
+                </div>
+              `;
+
+              content.innerHTML = metadataHTML + chartHtml + prosHtml;
             })
             .catch(error => {
               console.error('Error fetching head-to-head data:', error);
@@ -520,7 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     });
 
-    // Step 2: Sort by kelly fraction
+    // Step 2: Sort by final bet amount
     rawResults.sort((a, b) => b.fraction - a.fraction);
   
     // Step 3: Calculate final bets using cascading/rounding
