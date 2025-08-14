@@ -1065,7 +1065,7 @@ def getFightOdds(fighter_1_name, fighter_2_name, event_date, website="BestFightO
             #print(response.text)
             all_fight_data = response.json()
             browser.close()
-            time.sleep(random.uniform(6, 12))  # wait to avoid rate limiting
+            time.sleep(random.uniform(10, 15))  # wait to avoid rate limiting
 
         # 2: Find the fighter by name, store if the fighter is 1 or 2.
         fights = all_fight_data['data']['eventOfferTable']['fightOffers']['edges']

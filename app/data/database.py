@@ -55,6 +55,33 @@ def get_upcoming_matchups_from_db():
     conn.close()
     return matchups
 
+def get_upcoming_fight_data():
+    conn = get_db_connection()
+    matchups = get_upcoming_matchups_from_db()
+
+    fight_data = []
+
+    with conn:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            for fighter_a_id, fighter_b_id in matchups:
+                cur.execute("""
+                    SELECT * FROM fighters WHERE id = %s
+                """, (fighter_a_id,))
+                fighter_a_data = cur.fetchone()
+
+                cur.execute("""
+                    SELECT * FROM fighters WHERE id = %s
+                """, (fighter_b_id,))
+                fighter_b_data = cur.fetchone()
+
+                fight_data.append({
+                    "fighter_a": fighter_a_data,
+                    "fighter_b": fighter_b_data
+                })
+    
+    conn.close()
+    return fight_data
+
 def get_name_by_id(fighter_id):
     conn = get_db_connection()
     with conn:
@@ -109,6 +136,7 @@ def get_fighters_by_string(query):
     conn.close()
     return results
 
+# Might need to relook at
 def set_matchup_prediction(fighter_a_id, fighter_b_id, pred_a, pred_b):
     conn = get_db_connection()
     with conn:
@@ -121,4 +149,47 @@ def set_matchup_prediction(fighter_a_id, fighter_b_id, pred_a, pred_b):
                 WHERE (fighter_a_id = %s AND fighter_b_id = %s)
                    OR (fighter_a_id = %s AND fighter_b_id = %s);
             """, (pred_a, pred_b, fighter_a_id, fighter_b_id, fighter_b_id, fighter_a_id))
+    conn.close()
+
+# Gets a list of all the field names for a fighter/the fighters table
+def get_allowed_fighter_fields():
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_name = 'fighters'
+            """)
+            all_fields = [row[0] for row in cur.fetchall()]
+    conn.close()
+
+    # Remove fields you never want editable
+    excluded = {"id", "created_at", "updated_at"}
+    return [f for f in all_fields if f not in excluded]
+
+# Change a stat for a specific fighter
+def set_fighter_value(fighter_id, field, value):
+    # SQL Injection prevention, general field existence check.
+    fields = get_allowed_fighter_fields()
+    if field not in fields:
+        raise ValueError(f"Invalid field name: {field}")
+    
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cur:
+            query = f"UPDATE fighters SET {field} = %s WHERE id = %s;"
+            cur.execute(query, (value, fighter_id))
+    conn.close()
+
+# Removes all precalcualte predictions in the matchups table
+def reset_matchup_preds():
+    conn = get_db_connection()
+    with conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE matchups
+                SET fighter_a_prediction = NULL,
+                    fighter_b_prediction = NULL;
+            """)
     conn.close()
