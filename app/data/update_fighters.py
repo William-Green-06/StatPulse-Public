@@ -784,7 +784,7 @@ def get_fighter_stats_from_link(fighter_link):
     
     results_in_order = [None] * len(fight_links) # Keeps the size right for the list, so the thread results go into the right index instead of appending in order of completion
 
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=2) as executor:
         future_to_index = {
             executor.submit(processFight, link, fighter): idx
             for idx, link in enumerate(fight_links)
