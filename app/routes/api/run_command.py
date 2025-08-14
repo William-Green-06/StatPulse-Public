@@ -6,11 +6,7 @@ import threading
 
 run_command_api = Blueprint('run_command_api', __name__)
 
-def update_upcoming_matchups():
-    data = request.json
-    odds_site = data.get("odds_site", "BestFightOdds")
-    odds_link = data.get("odds_link")
-    
+def update_upcoming_matchups(odds_site, odds_link):
     t = threading.Thread(target=run_update_upcoming_matchups, args=(odds_site, odds_link))
     t.start()
     
