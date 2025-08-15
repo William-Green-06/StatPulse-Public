@@ -6,23 +6,40 @@ import threading
 
 run_command_api = Blueprint('run_command_api', __name__)
 
-def update_upcoming_matchups(odds_site, odds_link):
-    t = threading.Thread(target=run_update_upcoming_matchups, args=(odds_site, odds_link))
+def update_upcoming_odds(odds_site, odds_link):
+    # data = request.json
+    # print(data)
+    # odds_site = data.get("odds_site", "BestFightOdds")
+    # odds_link = data.get("odds_link")
+    #print(f"{odds_link} + {odds_site}")
+    
+    t = threading.Thread(target=run_update_upcoming_odds, args=(odds_site, odds_link))
+    t.start()
+    
+    return jsonify({"message": "Update started in background.  Check render for more info."})
+
+def update_upcoming_matchups():
+    t = threading.Thread(target=run_update_upcoming_matchups)
     t.start()
     
     return jsonify({"message": "Update started in background.  Check render for more info."})
 
 # Define your actual commands
-def run_update_upcoming_matchups(odds_site='BestFightOdds', odds_link=None):
-    if odds_site != 'BestFightOdds' and odds_site != 'FightOdds.io':
-        return "Error: invalid odds site."
-    
-    if odds_site == 'FightOdds.io' and odds_link == None:
-        return "Error: invalid odds link."
-    
+def run_update_upcoming_matchups(): 
     try:
         update_fighter_data()
         update_matchups(clean=True)
+        #update_odds(website=odds_site, link=odds_link)
+    except Exception as e:
+        return f"An error occured while updating: {e}"
+
+    return f"Matchups have been updated."
+
+def run_update_upcoming_odds(odds_site, odds_link): 
+    if odds_site != 'BestFightOdds' and odds_site != 'FightOdds.io':
+        return f"Invalid odds site."
+
+    try:
         update_odds(website=odds_site, link=odds_link)
     except Exception as e:
         return f"An error occured while updating: {e}"
@@ -38,6 +55,7 @@ def clear_matchup_preds():
 COMMANDS = {
     "updateUpcomingMatchups": update_upcoming_matchups,
     "clearMatchupPreds": clear_matchup_preds,
+    "updateUpcomingOdds": update_upcoming_odds
 }
 
 @run_command_api.route('/run-command', methods=['POST'])

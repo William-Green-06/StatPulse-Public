@@ -85,10 +85,22 @@
               </button>
             </div>
             <!-- Example command card -->
-            <div class="flex justify-between items-center bg-gray-50 border border-gray-200 rounded p-4" data-command="updateUpcomingMatchups">
+            <div class="flex justify-between items-center bg-gray-50 border border-gray-200 rounded p-4">
               <div class="pr-2">
                 <label class="font-bold text-lg">Update Upcoming Matchups</label>
-                <p class="text-sm text-gray-600">Scrapes the fighters for this week and makes predictions. Requires an odds site name (String), and an odds site link (String).</p>
+                <p class="text-sm text-gray-600">Scrapes the fighters for this week and makes predictions. Does not update fighter odds used for prediction. Requires no arguments.</p>
+                <!-- Optional arguments container -->
+              </div>
+              <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded"
+                      onclick="runCommand('updateUpcomingMatchups')">
+                ▶ Run
+              </button>
+            </div>
+            <!-- Example command card -->
+            <div class="flex justify-between items-center bg-gray-50 border border-gray-200 rounded p-4" data-command="updateUpcomingOdds">
+              <div class="pr-2">
+                <label class="font-bold text-lg">Update Upcoming Odds</label>
+                <p class="text-sm text-gray-600">Scrapes and updates fighter odds used for prediction. Requires an odds site name (String), and an odds site link (String).</p>
                 <!-- Optional arguments container -->
                 <div class="flex flex-col sm:flex-row sm:items-center gap-2">
                   <input type="text" placeholder="FightOdds.io" class="px-2 py-1 border rounded flex-1 arg" />
@@ -96,7 +108,7 @@
                 </div>
               </div>
               <button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded"
-                      onclick="runCommand('updateUpcomingMatchups')">
+                      onclick="runCommand('updateUpcomingOdds')">
                 ▶ Run
               </button>
             </div>

@@ -1494,7 +1494,7 @@ def update_odds(website='', link=''):
 
                 fighter_a_name = names[fighter_a_id]
                 fighter_b_name = names[fighter_b_id]
-                print(f"({fighter_a_name}, {fighter_b_name})")
+                print(f"Getting odds for ({fighter_a_name}, {fighter_b_name})")
 
                 date = datetime.now()
                 odds = getFightOdds(fighter_a_name, fighter_b_name, date, website=website, link=link)
