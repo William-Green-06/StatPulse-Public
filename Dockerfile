@@ -17,4 +17,4 @@ COPY . .
 EXPOSE 10000
 
 # Run the app with Gunicorn
-CMD ["gunicorn", "app.main:app", "-b", "0.0.0.0:10000", "-w", "4"]
+CMD ["gunicorn", "app.main:app", "-b", "0.0.0.0:10000", "-w", "1"]
