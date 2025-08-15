@@ -55,7 +55,7 @@ def predict_matchup(fighter_a_data, fighter_b_data):
 
     x_mirror = -x
 
-    #print(x_mirror.tolist())
+    print(x_mirror.tolist())
 
     x_mirror_scaled = scaler.transform(x_mirror)
     prediction_b = model.predict_proba(x_mirror_scaled).reshape(-1)
